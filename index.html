@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>SIM & CNIC Database Checker - HackerNet</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .search-type {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #f0f0f0;
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        .type-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .type-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 25px;
+            display: none;
+        }
+
+        .result-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .records-count {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .search-badge {
+            background: #4caf50;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .record-item {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+
+        .record-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .record-field {
+            margin-bottom: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+        }
+
+        .field-label {
+            font-weight: 700;
+            color: #667eea;
+            min-width: 80px;
+            font-size: 14px;
+        }
+
+        .field-value {
+            color: #333;
+            word-break: break-word;
+            flex: 1;
+        }
+
+        /* New credit section with WhatsApp channel link */
+        .credit {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #555;
+            border-top: 1px solid #eee;
+            padding-top: 18px;
+        }
+        
+        .channel-link {
+            color: #25D366;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: #f0faf2;
+            padding: 4px 12px;
+            border-radius: 40px;
+            margin-left: 5px;
+        }
+        
+        .channel-link:hover {
+            background: #25D366;
+            color: white;
+            text-decoration: none;
+            transform: scale(1.02);
+            box-shadow: 0 2px 8px rgba(37,211,102,0.3);
+        }
+        
+        .credit strong {
+            color: #1e1e2f;
+            font-weight: 800;
+        }
+        
+        .error-message {
+            background: #fee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            border-radius: 10px;
+            color: #c62828;
+        }
+
+        .example-numbers {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .example-numbers span {
+            background: #f0f0f0;
+            padding: 3px 8px;
+            border-radius: 5px;
+            margin: 0 3px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+
+        .example-numbers span:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        @media (max-width: 600px) {
+            .content {
+                padding: 20px;
+            }
+            
+            .input-wrapper {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+            
+            .field-label {
+                min-width: 70px;
+            }
+            
+            .channel-link {
+                display: inline-block;
+                margin-top: 5px;
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>📱 SIM & CNIC Database Checker</h1>
+                <p>Get SIM owner information by phone number or CNIC</p>
+            </div>
+            <div class="content">
+                <div class="search-type">
+                    <button class="type-btn active" onclick="setSearchType('phone', event)">📞 Phone Number</button>
+                    <button class="type-btn" onclick="setSearchType('cnic', event)">🆔 CNIC Number</button>
+                </div>
+
+                <div class="input-group">
+                    <label id="inputLabel">📞 Phone Number</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="searchInput" placeholder="Enter number (e.g., 3001234567)" autocomplete="off">
+                        <button id="checkBtn" onclick="checkQuery()">🔍 Search</button>
+                    </div>
+                    <div class="example-numbers" id="exampleNumbers">
+                        💡 Try: 
+                        <span onclick="setExample('3001234567')">3001234567</span>
+                        <span onclick="setExample('3012345678')">3012345678</span>
+                        <span onclick="setExample('3023456789')">3023456789</span>
+                    </div>
+                </div>
+
+                <div class="loader" id="loader">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 10px; color: #666;">Fetching data...</p>
+                </div>
+
+                <div class="result" id="result"></div>
+                
+                <!-- Updated credit section with clickable WhatsApp channel link -->
+                <div class="credit">
+                    Powered by 
+                    <strong id="hackerNetBrand" style="cursor: pointer; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; background-clip: text; color: transparent; transition: all 0.2s;">HackerNet</strong> 
+                    😈🔥 
+                    <a href="https://whatsapp.com/channel/0029VajXwL6AYlUQ0YPBzA2U" target="_blank" rel="noopener noreferrer" class="channel-link">
+                        📲 Join WhatsApp Channel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://famofc.site/api/database.php';
+        let currentSearchType = 'phone';
+
+        function setSearchType(type, event) {
+            currentSearchType = type;
+            
+            // Update button styles
+            const btns = document.querySelectorAll('.type-btn');
+            btns.forEach(btn => {
+                btn.classList.remove('active');
+            });
+            if(event && event.target) {
+                event.target.classList.add('active');
+            } else {
+                // fallback: add active based on type
+                if(type === 'phone') btns[0].classList.add('active');
+                else btns[1].classList.add('active');
+            }
+            
+            // Update input label and placeholder
+            const inputLabel = document.getElementById('inputLabel');
+            const searchInput = document.getElementById('searchInput');
+            const exampleDiv = document.getElementById('exampleNumbers');
+            
+            if (type === 'phone') {
+                inputLabel.innerHTML = '📞 Phone Number';
+                searchInput.placeholder = 'Enter number (e.g., 3001234567)';
+                exampleDiv.innerHTML = '💡 Try: <span onclick="setExample(\'3001234567\')">3001234567</span> <span onclick="setExample(\'3012345678\')">3012345678</span> <span onclick="setExample(\'3023456789\')">3023456789</span>';
+            } else {
+                inputLabel.innerHTML = '🆔 CNIC Number';
+                searchInput.placeholder = 'Enter CNIC (e.g., 1234512345671 or 12345-1234567-1)';
+                exampleDiv.innerHTML = '💡 Try: <span onclick="setExample(\'1234512345671\')">1234512345671</span> <span onclick="setExample(\'12345-1234567-1\')">12345-1234567-1</span>';
+            }
+            
+            // Clear previous results
+            document.getElementById('result').style.display = 'none';
+            searchInput.value = '';
+        }
+
+        function setExample(value) {
+            document.getElementById('searchInput').value = value;
+        }
+
+        async function checkQuery() {
+            const searchQuery = document.getElementById('searchInput').value.trim();
+            
+            if (!searchQuery) {
+                showError('Please enter a search query');
+                return;
+            }
+
+            // Show loader, hide previous result
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('checkBtn').disabled = true;
+
+            try {
+                const response = await fetch(`${API_URL}?q=${encodeURIComponent(searchQuery)}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayResult(data.data);
+                } else {
+                    showError(data.error || 'No data found');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showError('Failed to connect to API. Please check your internet connection.');
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('checkBtn').disabled = false;
+            }
+        }
+
+        function displayResult(data) {
+            const resultDiv = document.getElementById('result');
+            
+            if (!data.records || data.records.length === 0) {
+                showError('No records found');
+                return;
+            }
+
+            const searchTypeText = data.search_type === 'phone' ? 'Phone Number' : 'CNIC';
+            const searchValue = data.search_type === 'phone' ? data.queried_number : data.queried_cnic;
+
+            let html = `
+                <div class="result-card">
+                    <div class="result-header">
+                        <div>
+                            <strong>📊 Search Results</strong>
+                            <div class="search-badge" style="margin-top: 5px;">${searchTypeText}: ${escapeHtml(searchValue)}</div>
+                        </div>
+                        <span class="records-count">${data.records_count || data.records.length} Record(s) Found</span>
+                    </div>
+            `;
+
+            data.records.forEach((record, index) => {
+                html += `
+                    <div class="record-item">
+                        ${data.records.length > 1 ? `<div style="font-size: 12px; color: #667eea; margin-bottom: 10px;">📌 Record #${index + 1}</div>` : ''}
+                        <div class="record-field">
+                            <span class="field-label">👤 Name:</span>
+                            <span class="field-value">${escapeHtml(record.full_name || 'N/A')}</span>
+                        </div>
+                        <div class="record-field">
+                            <span class="field-label">📞 Phone:</span>
+                            <span class="field-value">${escapeHtml(record.phone || 'N/A')}</span>
+                        </div>
+                        <div class="record-field">
+                            <span class="field-label">🆔 CNIC:</span>
+                            <span class="field-value">${escapeHtml(record.cnic || 'N/A')}</span>
+                        </div>
+                        <div class="record-field">
+                            <span class="field-label">📍 Address:</span>
+                            <span class="field-value">${escapeHtml(record.address || 'N/A')}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            resultDiv.innerHTML = html;
+            resultDiv.style.display = 'block';
+        }
+
+        function showError(message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="error-message">
+                    <strong>⚠️ Error:</strong> ${escapeHtml(message)}
+                </div>
+            `;
+            resultDiv.style.display = 'block';
+        }
+
+        function escapeHtml(text) {
+            if (!text) return 'N/A';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkQuery();
+            }
+        });
+        
+        // Add extra hover effect for HackerNet brand + make it also clickable (optional UX)
+        // But main link is already in the WhatsApp button. However we also make the brand name clickable? 
+        // The requirement: "jaha par jaha 😈 🔥 emoji se pehle Jo hacker net likha hua h na os me muje Apne Whatsapp ka channel link Igana h"
+        // Means: In the area where "HackerNet" is written before the emojis, we need to add the WhatsApp channel link.
+        // I have added a clear "Join WhatsApp Channel" link right after the emojis, and also the "HackerNet" text itself can be turned into a clickable link.
+        // To fully satisfy that the exact "HackerNet" wording becomes a clickable link that goes to the WhatsApp channel, I'll make the brand text also a link.
+        // Let's upgrade: the credit line: "Powered by HackerNet 😈🔥" and we wrap "HackerNet" with an anchor to WhatsApp channel.
+        // However there is already a separate channel link, but it's fine, I'll embed the link in the brand name as well.
+        // I'll replace the credit div content dynamically via script or modify inline.
+        
+        // Ensure the brand name "HackerNet" is clickable and opens WhatsApp channel. Also keep the additional button for visibility.
+        function enhanceBrandLink() {
+            const creditDiv = document.querySelector('.credit');
+            if (creditDiv) {
+                const currentHTML = creditDiv.innerHTML;
+                // Replace the strong with a clickable link but keep styling
+                // The existing strong id "hackerNetBrand" we already set but without href; we will modify it to an anchor.
+                const brandStrong = document.getElementById('hackerNetBrand');
+                if (brandStrong) {
+                    const whatsappLink = 'https://whatsapp.com/channel/0029VajXwL6AYlUQ0YPBzA2U';
+                    // Replace the inner strong with an anchor tag, preserving text and gradient style
+                    const anchor = document.createElement('a');
+                    anchor.href = whatsappLink;
+                    anchor.target = '_blank';
+                    anchor.rel = 'noopener noreferrer';
+                    anchor.style.textDecoration = 'none';
+                    anchor.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+                    anchor.style.webkitBackgroundClip = 'text';
+                    anchor.style.backgroundClip = 'text';
+                    anchor.style.color = 'transparent';
+                    anchor.style.fontWeight = '800';
+                    anchor.style.fontSize = 'inherit';
+                    anchor.style.transition = 'all 0.2s';
+                    anchor.innerHTML = 'HackerNet';
+                    anchor.onmouseenter = () => {
+                        anchor.style.opacity = '0.85';
+                        anchor.style.transform = 'scale(1.02)';
+                    };
+                    anchor.onmouseleave = () => {
+                        anchor.style.opacity = '1';
+                        anchor.style.transform = 'scale(1)';
+                    };
+                    brandStrong.parentNode.replaceChild(anchor, brandStrong);
+                }
+            }
+        }
+        
+        // Also to ensure that any dynamic content won't break, we call after page load
+        window.addEventListener('DOMContentLoaded', () => {
+            // Make the brand clickable: replace the static strong with dynamic link
+            enhanceBrandLink();
+            
+            // Also set active search type properly if phone is default.
+            const activeBtn = document.querySelector('.type-btn.active');
+            if (!activeBtn) {
+                document.querySelector('.type-btn')?.classList.add('active');
+            }
+        });
+        
+        // Fallback for setSearchType event when called from onclick without event param edge
+        window.setSearchType = function(type, ev) {
+            if (!ev && window.event) ev = window.event;
+            currentSearchType = type;
+            const btns = document.querySelectorAll('.type-btn');
+            btns.forEach(btn => btn.classList.remove('active'));
+            if (ev && ev.target) {
+                ev.target.classList.add('active');
+            } else {
+                if(type === 'phone') btns[0].classList.add('active');
+                else btns[1].classList.add('active');
+            }
+            const inputLabel = document.getElementById('inputLabel');
+            const searchInput = document.getElementById('searchInput');
+            const exampleDiv = document.getElementById('exampleNumbers');
+            if (type === 'phone') {
+                inputLabel.innerHTML = '📞 Phone Number';
+                searchInput.placeholder = 'Enter number (e.g., 3001234567)';
+                exampleDiv.innerHTML = '💡 Try: <span onclick="setExample(\'3001234567\')">3001234567</span> <span onclick="setExample(\'3012345678\')">3012345678</span> <span onclick="setExample(\'3023456789\')">3023456789</span>';
+            } else {
+                inputLabel.innerHTML = '🆔 CNIC Number';
+                searchInput.placeholder = 'Enter CNIC (e.g., 1234512345671 or 12345-1234567-1)';
+                exampleDiv.innerHTML = '💡 Try: <span onclick="setExample(\'1234512345671\')">1234512345671</span> <span onclick="setExample(\'12345-1234567-1\')">12345-1234567-1</span>';
+            }
+            document.getElementById('result').style.display = 'none';
+            searchInput.value = '';
+        };
+        
+        // Attach global setExample
+        window.setExample = setExample;
+        window.checkQuery = checkQuery;
+    </script>
+</body>
+</html>
